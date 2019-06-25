@@ -1,16 +1,23 @@
 package com.asela.test.java.concurrency;
 
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ExecutorsTest {
 
+    private Random random = new Random(1L);
+
+
     @FunctionalInterface
     private interface Printer {
-         void print();
+        void print();
     }
 
     private Function<String, Printer> print = string -> () -> System.out.printf("%s=%s%n", Thread.currentThread().getName(), string);
@@ -20,12 +27,16 @@ public class ExecutorsTest {
 
     @Test
     public void testSingleThreadExecutor() {
-        checkExecutorService(Executors.newSingleThreadExecutor(), 5, 2);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        checkExecutorService(executorService, 5, 2);
+        executorService.shutdown();
     }
 
     @Test
     public void testDualThreadExecutor() {
-        checkExecutorService(Executors.newFixedThreadPool(2), 5, 2);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        checkExecutorService(executorService, 5, 2);
+        executorService.shutdown();
     }
 
 
@@ -50,12 +61,52 @@ public class ExecutorsTest {
         };
 
 
-        for(int i = 0; i < noOfTask; i++ ) {
+        for (int i = 0; i < noOfTask; i++) {
             phaser.register();
             executorService.execute(instance);
         }
         phaser.arriveAndAwaitAdvance();
 
         complete.print();
+    }
+
+    @Test
+    public void testFuture() {
+        Callable<Integer> instance = () -> {
+
+            begin.print();
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            complete.print();
+
+            return random.nextInt(100);
+        };
+
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        Set<Future<Integer>> futures = new HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            futures.add(executorService.submit(instance));
+        }
+
+        try {
+            Assert.assertEquals(457, futures.stream().mapToInt(f -> {
+                try {
+                    return f.get().intValue();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                throw new RuntimeException("Summation Failed");
+            }).sum());
+        } finally {
+
+            executorService.shutdown();
+        }
     }
 }
