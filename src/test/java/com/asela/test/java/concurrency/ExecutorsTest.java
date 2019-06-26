@@ -7,23 +7,10 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ExecutorsTest {
 
     private Random random = new Random(1L);
-
-
-    @FunctionalInterface
-    private interface Printer {
-        void print();
-    }
-
-    private Function<String, Printer> print = string -> () -> System.out.printf("%s=%s%n", Thread.currentThread().getName(), string);
-
-    private Printer begin = print.apply("Begin");
-    private Printer complete = print.apply("Complete");
 
     @Test
     public void testSingleThreadExecutor() {
@@ -41,7 +28,7 @@ public class ExecutorsTest {
 
 
     private void checkExecutorService(final ExecutorService executorService, final int noOfTask, final long seconds) {
-        begin.print();
+        Printer.begin.print();
 
         final Phaser phaser = new Phaser();
 
@@ -49,7 +36,7 @@ public class ExecutorsTest {
 
         Runnable instance = () -> {
 
-            begin.print();
+            Printer.begin.print();
             try {
                 TimeUnit.SECONDS.sleep(seconds);
             } catch (InterruptedException e) {
@@ -57,7 +44,7 @@ public class ExecutorsTest {
             }
 
             phaser.arrive();
-            complete.print();
+            Printer.complete.print();
         };
 
 
@@ -67,21 +54,21 @@ public class ExecutorsTest {
         }
         phaser.arriveAndAwaitAdvance();
 
-        complete.print();
+        Printer.complete.print();
     }
 
     @Test
     public void testFuture() {
         Callable<Integer> instance = () -> {
 
-            begin.print();
+            Printer.begin.print();
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            complete.print();
+            Printer.complete.print();
 
             return random.nextInt(100);
         };
