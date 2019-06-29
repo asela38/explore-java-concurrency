@@ -10,17 +10,17 @@ import java.util.concurrent.*;
 public class CyclicBarrierTest {
 
     @Test
-    public void testBasic() throws InterruptedException {
+    public void testBasic() {
 
-        CyclicBarrier cyclicBarrier = new CyclicBarrier(4);
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(4, () -> System.out.println(""));
         Phaser phaser = new Phaser();
 
-        boolean useBarrier = false;
+        boolean useBarrier = true;
         int limit = 10;
         Map<String, Integer> map = Collections.synchronizedMap(new HashMap<>());
         Runnable task =() -> {
             for(int i = 0 ; i < limit; i++ ) {
-                System.out.println(i);
+                System.out.print(i);
                 if(useBarrier) {
                     try {
                         cyclicBarrier.await();
