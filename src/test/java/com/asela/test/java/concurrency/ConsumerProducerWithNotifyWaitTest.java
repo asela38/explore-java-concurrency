@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
@@ -107,6 +108,46 @@ public class ConsumerProducerWithNotifyWaitTest {
                 } finally {
                     lock.unlock();
                 }
+        };
+
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.execute(consumerTask);
+        executorService.execute(producerTask);
+
+
+        System.in.read(new byte[1]);
+    }
+
+    @Test
+    public void testWithArrayBlockingQueue() throws IOException {
+
+
+        ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1);
+
+        Runnable producerTask = () -> {
+            while (true) {
+                try {
+                    System.out.printf("[%s] Consumer Polling = %s %n", Thread.currentThread().getName(), queue.take());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        };
+
+
+        Runnable consumerTask = () -> {
+            while (true) {
+                try {
+                    int number = random.nextInt(300);
+                    queue.put(number);
+                    System.out.printf("[%s] Producer pushed = %s (%s) %n", Thread.currentThread().getName(),
+                            number, queue.size());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
         };
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
